@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>店舗DX - 新商品配布設定変換システム</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .drop-zone {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 40px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .drop-zone:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .drop-zone.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .drop-zone-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .drop-zone-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .drop-zone-hint {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .status.processing {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .store-master-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+
+        .store-master-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .store-master-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .store-master-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .download-options {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .download-options h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-download {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-download-zip {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-download-zip:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-download-individual {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-download-individual:hover {
+            background: #43a047;
+            transform: translateY(-2px);
+        }
+
+        .download-note {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff9c4;
+            border-left: 4px solid #fbc02d;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #f57f17;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏪 店舗DX</h1>
+        <div class="subtitle">新商品配布エクセルをCSV変換 (週次×2回)</div>
+
+        <div class="drop-zone" id="dropZone">
+            <div class="drop-zone-icon">📁</div>
+            <div class="drop-zone-text">Excelファイルをドラッグ&ドロップ</div>
+            <div class="drop-zone-hint">または クリックしてファイルを選択</div>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls">
+        </div>
+
+        <div class="store-master-section">
+            <div class="store-master-title">📋 店舗マスタ設定</div>
+            <textarea id="storeMaster" class="store-master-input" placeholder="店舗コード,店舗名,出荷曜日&#10;0089,西宮,金&#10;0171,イオン伊丹,金&#10;0026,ＬＴ,水"></textarea>
+            <div class="store-master-hint">
+                ※ 形式: 店舗コード,店舗名,出荷曜日(月/火/水/木/金/土/日)
+            </div>
+        </div>
+
+        <div class="status" id="status"></div>
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="download-options" id="downloadOptions">
+            <h3>📥 ダウンロード方法を選択</h3>
+            <div class="download-buttons">
+                <button class="btn-download btn-download-zip" id="btnDownloadZip">
+                    📦 ZIPファイル (推奨)<br>
+                    <small>3つのCSVをまとめてダウンロード</small>
+                </button>
+                <button class="btn-download btn-download-individual" id="btnDownloadIndividual">
+                    📄 個別ダウンロード<br>
+                    <small>3つのファイルを順番にDL</small>
+                </button>
+            </div>
+            <div class="download-note">
+                💡 <strong>Windowsセキュリティでブロックされる場合:</strong> 「個別ダウンロード」を選択してください。<br>
+                ⚠️ <strong>個別ダウンロード時:</strong> ブラウザが「複数ファイルのダウンロードを許可しますか？」と聞く場合があります。「許可」を選択してください。
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>📝 使用方法</strong>
+            1. 店舗マスタを設定してください(必須)<br>
+            2. 変換前Excelファイル(.xlsx, .xls)をドラッグ&ドロップまたは選択<br>
+            3. 自動的に3つのCSVファイルが生成され、ZIPファイルとしてダウンロードされます<br>
+            <br>
+            <strong>✅ 出力ファイル</strong>
+            • 変換A.csv - ディスプレイ数あり<br>
+            • 変換B-1.csv - ディスプレイ数なし<br>
+            • 変換B-2.csv - ロジザード用(見出しなし)
+        </div>
+    </div>
+
+    <script>
+        // デフォルトの店舗マスタ
+        const defaultStoreMaster = `0089,西宮,金
+0171,イオン伊丹,金
+0026,ＬＴ,水
+0024,流山,火
+0112,吉祥寺,水
+0077,高槻,水
+0023,ＮＰ,火
+0094,ららぽーと豊洲,火
+0005,川崎ルフロン,水
+0022,箱崎,水
+0017,相模大野,水
+0048,青葉台東急,火
+0100,グランデュオ蒲田,水
+0081,池袋ＨＣ,火
+0014,新横浜ペペ,火
+0076,仙台泉,水`;
+
+        // ページ読み込み時にデフォルトマスタを設定
+        document.getElementById('storeMaster').value = defaultStoreMaster;
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+
+        // 曜日から日付を計算
+        function getNextWeekday(targetDay) {
+            const days = {
+                '日': 0, '月': 1, '火': 2, '水': 3,
+                '木': 4, '金': 5, '土': 6
+            };
+            
+            const today = new Date();
+            const currentDay = today.getDay();
+            const targetDayNum = days[targetDay];
+            
+            let daysUntilTarget = targetDayNum - currentDay;
+            if (daysUntilTarget <= 0) {
+                daysUntilTarget += 7;
+            }
+            
+            const targetDate = new Date(today);
+            targetDate.setDate(today.getDate() + daysUntilTarget);
+            
+            return targetDate;
+        }
+
+        // 日付をyyyymmdd形式に変換
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+
+        // 店舗マスタをパース
+        function parseStoreMaster(masterText) {
+            const masterMap = {};
+            const lines = masterText.trim().split('\n');
+            
+            for (const line of lines) {
+                const parts = line.split(',').map(p => p.trim());
+                if (parts.length >= 3) {
+                    masterMap[parts[0]] = {
+                        name: parts[1],
+                        shipDay: parts[2]
+                    };
+                }
+            }
+            
+            return masterMap;
+        }
+
+        // ドラッグ&ドロップイベント
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // ダウンロードボタンのイベントリスナー
+        document.getElementById('btnDownloadZip').addEventListener('click', async () => {
+            if (window.convertedResults) {
+                showStatus('processing', '<span class="spinner"></span>ZIPファイルを作成中...');
+                await createZipAndDownload(window.convertedResults);
+                showStatus('success', '✓ ZIPファイルをダウンロードしました！');
+                setTimeout(() => hideDownloadOptions(), 2000);
+            }
+        });
+
+        document.getElementById('btnDownloadIndividual').addEventListener('click', async () => {
+            if (window.convertedResults) {
+                showStatus('processing', '<span class="spinner"></span>CSVファイルをダウンロード中...');
+                await downloadIndividualFiles(window.convertedResults);
+                showStatus('success', '✓ 3つのCSVファイルをダウンロードしました！');
+                setTimeout(() => hideDownloadOptions(), 2000);
+            }
+        });
+
+        // ファイル処理
+        async function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                showStatus('error', 'Excelファイル(.xlsx, .xls)を選択してください。');
+                return;
+            }
+
+            // 店舗マスタの確認
+            const masterText = document.getElementById('storeMaster').value.trim();
+            if (!masterText) {
+                showStatus('error', '店舗マスタを設定してください。');
+                return;
+            }
+
+            showStatus('processing', '<span class="spinner"></span>Excelファイルを処理中...');
+            showProgress(10);
+            hideDownloadOptions();
+
+            try {
+                const storeMaster = parseStoreMaster(masterText);
+                
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                showProgress(30);
+                
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+                
+                showProgress(50);
+                
+                // データの解析と変換
+                const results = processData(jsonData, storeMaster);
+                
+                showProgress(70);
+                
+                // 変換完了 - ダウンロードオプションを表示
+                window.convertedResults = results; // グローバルに保存
+                
+                showProgress(100);
+                
+                showStatus('success', '✓ 変換完了！ダウンロード方法を選択してください。');
+                showDownloadOptions();
+                
+                setTimeout(() => {
+                    hideProgress();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('エラー:', error);
+                showStatus('error', `エラーが発生しました: ${error.message}`);
+                hideProgress();
+                hideDownloadOptions();
+            }
+        }
+
+        // データ処理
+        function processData(jsonData, storeMaster) {
+            // 品番の行を探す(行5)
+            const headerRow = 5;
+            const itemCodes = [];
+            
+            for (let col = 4; col < jsonData[headerRow].length; col++) {
+                const code = jsonData[headerRow][col];
+                if (code !== null && code !== undefined && code !== '') {
+                    itemCodes.push({
+                        code: String(code),
+                        colIndex: col
+                    });
+                }
+            }
+            
+            // データ開始行(行14)
+            const dataStartRow = 14;
+            
+            const resultA = [];
+            const resultB1 = [];
+            const resultB2 = [];
+            
+            // ヘッダー行を追加(変換A、B-1)
+            const headerA = '店舗コード,店舗名称,型番,品番,商品コード,商品名称,型番,入数,手持ち日数,ディスプレイ数,上限値,売上ランク,センター在庫,店舗在庫,廃盤,大分類,中分類,小分類,細分類,発注締め日,発注バラ数,タグ1,タグ2,タグ3,タグ4,タグ5,タグ6,タグ7,タグ8';
+            resultA.push(headerA);
+            resultB1.push(headerA);
+            
+            // 各店舗のデータを処理
+            for (let row = dataStartRow; row < jsonData.length; row++) {
+                const storeCode = jsonData[row][1];
+                
+                if (!storeCode || storeCode === null || storeCode === '') {
+                    continue;
+                }
+                
+                const storeCodeStr = String(storeCode);
+                
+                // 各品番の配布数を処理
+                for (const item of itemCodes) {
+                    const qty = jsonData[row][item.colIndex];
+                    
+                    if (qty !== null && qty !== undefined && qty !== '' && !isNaN(qty) && Number(qty) > 0) {
+                        const qtyNum = Number(qty);
+                        
+                        // 変換A: ディスプレイ数は配布数の半数(切り上げ)
+                        const displayQty = Math.ceil(qtyNum / 2);
+                        const lineA = `${storeCodeStr},,,${item.code},,,,,7,${displayQty},${qtyNum},,,,,,,,,,${qtyNum},,,,,,,,`;
+                        resultA.push(lineA);
+                        
+                        // 変換B-1: ディスプレイ数と上限値は空欄
+                        const lineB1 = `${storeCodeStr},,,${item.code},,,,,7,,,,,,,,,,,,,,,,,,,,`;
+                        resultB1.push(lineB1);
+                        
+                        // 変換B-2: 出荷情報
+                        const storeMasterInfo = storeMaster[storeCodeStr];
+                        if (storeMasterInfo) {
+                            const shipDate = getNextWeekday(storeMasterInfo.shipDay);
+                            const deliveryDate = new Date(shipDate);
+                            deliveryDate.setDate(shipDate.getDate() + 1);
+                            
+                            const shipDateStr = formatDate(shipDate);
+                            const deliveryDateStr = formatDate(deliveryDate);
+                            
+                            const lineB2 = `0901,${storeCodeStr},${shipDateStr},${deliveryDateStr},131313,1,${item.code},${qtyNum},1`;
+                            resultB2.push(lineB2);
+                        } else {
+                            console.warn(`店舗コード ${storeCodeStr} がマスタに見つかりません`);
+                        }
+                    }
+                }
+            }
+            
+            return {
+                A: resultA.join('\n'),
+                B1: resultB1.join('\n'),
+                B2: resultB2.join('\n')
+            };
+        }
+
+        // ZIPファイル作成とダウンロード
+        async function createZipAndDownload(results) {
+            const zip = new JSZip();
+            
+            // タイムスタンプでフォルダ名を作成
+            const now = new Date();
+            const timestamp = formatDateTime(now);
+            const folderName = timestamp;
+            
+            // BOM付きUTF-8で保存
+            const BOM = '\uFEFF';
+            
+            zip.file(`${folderName}/変換A.csv`, BOM + results.A);
+            zip.file(`${folderName}/変換B-1.csv`, BOM + results.B1);
+            zip.file(`${folderName}/変換B-2.csv`, results.B2); // B-2はBOMなし
+            
+            const blob = await zip.generateAsync({ type: 'blob' });
+            
+            // ダウンロード
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `店舗DX_変換_${timestamp}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 個別ファイルダウンロード（時間差をつけてダウンロード）
+        async function downloadIndividualFiles(results) {
+            const now = new Date();
+            const timestamp = formatDateTime(now);
+            const BOM = '\uFEFF';
+            
+            // 変換A
+            downloadFile(BOM + results.A, `変換A_${timestamp}.csv`, 'text/csv;charset=utf-8;');
+            
+            // 800ms待機
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // 変換B-1
+            downloadFile(BOM + results.B1, `変換B-1_${timestamp}.csv`, 'text/csv;charset=utf-8;');
+            
+            // 800ms待機
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // 変換B-2 (BOMなし)
+            downloadFile(results.B2, `変換B-2_${timestamp}.csv`, 'text/csv;charset=utf-8;');
+        }
+
+        // ファイルダウンロード共通関数
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // タイムスタンプ生成(yyyymmddHHMM形式)
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}${month}${day}${hours}${minutes}`;
+        }
+
+        // ステータス表示
+        function showStatus(type, message) {
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+            status.style.display = 'block';
+        }
+
+        // プログレスバー表示
+        function showProgress(percent) {
+            progressBar.style.display = 'block';
+            progressFill.style.width = `${percent}%`;
+        }
+
+        // プログレスバー非表示
+        function hideProgress() {
+            progressBar.style.display = 'none';
+            progressFill.style.width = '0%';
+        }
+
+        // ダウンロードオプション表示
+        function showDownloadOptions() {
+            document.getElementById('downloadOptions').style.display = 'block';
+        }
+
+        // ダウンロードオプション非表示
+        function hideDownloadOptions() {
+            document.getElementById('downloadOptions').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

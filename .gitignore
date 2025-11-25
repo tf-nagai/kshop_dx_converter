@@ -1,0 +1,29 @@
+# OSファイル
+.DS_Store
+Thumbs.db
+
+# エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ログファイル
+*.log
+
+# テストファイル
+*.xlsx
+*.xls
+*.csv
+*.zip
+
+# Node.js (将来の拡張用)
+node_modules/
+package-lock.json
+
+# Python (開発用)
+__pycache__/
+*.py[cod]
+venv/
+.env
