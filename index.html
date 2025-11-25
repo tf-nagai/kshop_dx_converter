@@ -15,78 +15,78 @@
 
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background: #F8F8F8;
+            background: #E8DDD3;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            color: #333;
+            color: #3E3E3E;
         }
 
         .container {
             background: #FFFFFF;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(139, 115, 85, 0.15);
             padding: 50px 40px;
             max-width: 800px;
             width: 100%;
         }
 
         h1 {
-            color: #333;
+            color: #3E3E3E;
             text-align: center;
             margin-bottom: 8px;
             font-size: 26px;
             font-weight: 500;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.03em;
         }
 
         .subtitle {
             text-align: center;
-            color: #666;
+            color: #8B7355;
             margin-bottom: 40px;
             font-size: 13px;
-            font-weight: 300;
+            font-weight: 400;
         }
 
         .drop-zone {
-            border: 2px dashed #CCCCCC;
-            border-radius: 4px;
+            border: 2px dashed #C4B5A0;
+            border-radius: 6px;
             padding: 60px 40px;
             text-align: center;
-            background: #FAFAFA;
+            background: #FAF8F5;
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
         }
 
         .drop-zone:hover {
-            background: #F5F5F5;
-            border-color: #999;
+            background: #F5F2ED;
+            border-color: #8B7355;
         }
 
         .drop-zone.dragover {
-            background: #F0F0F0;
-            border-color: #666;
+            background: #F0EBE3;
+            border-color: #8B7355;
         }
 
         .drop-zone-icon {
             font-size: 48px;
             margin-bottom: 16px;
-            color: #999;
+            color: #A89582;
         }
 
         .drop-zone-text {
             font-size: 16px;
-            color: #333;
+            color: #3E3E3E;
             margin-bottom: 8px;
-            font-weight: 400;
+            font-weight: 500;
         }
 
         .drop-zone-hint {
             font-size: 13px;
-            color: #999;
+            color: #8B7355;
         }
 
         .file-input {
@@ -96,33 +96,33 @@
         .status {
             margin-top: 30px;
             padding: 16px 20px;
-            border-radius: 4px;
+            border-radius: 6px;
             display: none;
             font-size: 14px;
         }
 
         .status.success {
-            background: #F0F8F0;
-            border: 1px solid #C8E6C9;
+            background: #E8F5E9;
+            border: 1px solid #81C784;
             color: #2E7D32;
         }
 
         .status.error {
-            background: #FFF3F3;
-            border: 1px solid #FFCDD2;
+            background: #FFEBEE;
+            border: 1px solid #E57373;
             color: #C62828;
         }
 
         .status.processing {
-            background: #F5F5F5;
-            border: 1px solid #E0E0E0;
-            color: #666;
+            background: #F5F2ED;
+            border: 1px solid #C4B5A0;
+            color: #5D5D5D;
         }
 
         .progress-bar {
             width: 100%;
             height: 4px;
-            background: #E0E0E0;
+            background: #E8DDD3;
             border-radius: 2px;
             overflow: hidden;
             margin-top: 12px;
@@ -131,7 +131,7 @@
 
         .progress-fill {
             height: 100%;
-            background: #333;
+            background: #8B7355;
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -139,49 +139,50 @@
         .store-master-section {
             margin-top: 40px;
             padding: 30px;
-            background: #FAFAFA;
-            border-radius: 4px;
-            border: 1px solid #E5E5E5;
+            background: #FAF8F5;
+            border-radius: 6px;
+            border: 1px solid #E8DDD3;
         }
 
         .store-master-title {
             font-size: 15px;
             font-weight: 500;
-            color: #333;
+            color: #3E3E3E;
             margin-bottom: 16px;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.02em;
         }
 
         .store-master-input {
             width: 100%;
             padding: 12px;
-            border: 1px solid #DDD;
-            border-radius: 4px;
+            border: 1px solid #D4C4B0;
+            border-radius: 6px;
             font-size: 13px;
             font-family: 'Courier New', monospace;
             resize: vertical;
             min-height: 120px;
             background: #FFFFFF;
-            color: #333;
+            color: #3E3E3E;
         }
 
         .store-master-input:focus {
             outline: none;
-            border-color: #999;
+            border-color: #8B7355;
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
         }
 
         .store-master-hint {
             font-size: 12px;
-            color: #999;
+            color: #8B7355;
             margin-top: 8px;
         }
 
         .info-box {
-            background: #FAFAFA;
-            border: 1px solid #E5E5E5;
-            color: #666;
+            background: #FAF8F5;
+            border: 1px solid #E8DDD3;
+            color: #5D5D5D;
             padding: 20px;
-            border-radius: 4px;
+            border-radius: 6px;
             margin-top: 30px;
             font-size: 13px;
             line-height: 1.8;
@@ -190,25 +191,25 @@
         .info-box strong {
             display: block;
             margin-bottom: 10px;
-            color: #333;
+            color: #3E3E3E;
             font-weight: 500;
         }
 
         .download-options {
             margin-top: 30px;
             padding: 30px;
-            background: #FAFAFA;
-            border: 1px solid #E5E5E5;
-            border-radius: 4px;
+            background: #FAF8F5;
+            border: 1px solid #E8DDD3;
+            border-radius: 6px;
             display: none;
         }
 
         .download-options h3 {
-            color: #333;
+            color: #3E3E3E;
             margin-bottom: 20px;
             font-size: 15px;
             font-weight: 500;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.02em;
         }
 
         .download-buttons {
@@ -220,46 +221,48 @@
         .btn-download {
             padding: 16px 28px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 14px;
-            font-weight: 400;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
             flex: 1;
             min-width: 180px;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.02em;
         }
 
         .btn-download-zip {
-            background: #333;
+            background: #8B7355;
             color: white;
-            border: 1px solid #333;
         }
 
         .btn-download-zip:hover {
-            background: #000;
-            border-color: #000;
+            background: #6F5C46;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 115, 85, 0.3);
         }
 
         .btn-download-individual {
             background: #FFFFFF;
-            color: #333;
-            border: 1px solid #333;
+            color: #8B7355;
+            border: 1.5px solid #8B7355;
         }
 
         .btn-download-individual:hover {
-            background: #333;
+            background: #8B7355;
             color: #FFFFFF;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 115, 85, 0.3);
         }
 
         .download-note {
             margin-top: 20px;
             padding: 16px;
-            background: #FFF9E6;
-            border-left: 3px solid #F9C74F;
-            border-radius: 2px;
+            background: #FFF8E1;
+            border-left: 3px solid #FFCA28;
+            border-radius: 4px;
             font-size: 12px;
-            color: #666;
+            color: #6B5416;
             line-height: 1.6;
         }
 
@@ -272,8 +275,8 @@
             display: inline-block;
             width: 16px;
             height: 16px;
-            border: 2px solid #E0E0E0;
-            border-top: 2px solid #666;
+            border: 2px solid #E8DDD3;
+            border-top: 2px solid #8B7355;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-right: 8px;
@@ -284,7 +287,7 @@
             display: block;
             font-size: 11px;
             margin-top: 4px;
-            opacity: 0.8;
+            opacity: 0.9;
         }
     </style>
     </style>
