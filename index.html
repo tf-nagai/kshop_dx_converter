@@ -231,28 +231,28 @@
             letter-spacing: 0.02em;
         }
 
-        .btn-download-zip {
+        .btn-download-individual {
             background: #8B7355;
             color: white;
         }
 
-        .btn-download-zip:hover {
+        .btn-download-individual:hover {
             background: #6F5C46;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(139, 115, 85, 0.3);
         }
 
-        .btn-download-individual {
+        .btn-download-zip {
             background: #FFFFFF;
-            color: #8B7355;
-            border: 1.5px solid #8B7355;
+            color: #999;
+            border: 1.5px solid #CCC;
         }
 
-        .btn-download-individual:hover {
-            background: #8B7355;
-            color: #FFFFFF;
+        .btn-download-zip:hover {
+            background: #F5F5F5;
+            color: #666;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(139, 115, 85, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .download-note {
@@ -320,18 +320,18 @@
         <div class="download-options" id="downloadOptions">
             <h3>📥 ダウンロード方法を選択</h3>
             <div class="download-buttons">
-                <button class="btn-download btn-download-zip" id="btnDownloadZip">
-                    📦 ZIPファイル (推奨)<br>
-                    <small>CSVをまとめてダウンロード</small>
-                </button>
                 <button class="btn-download btn-download-individual" id="btnDownloadIndividual">
-                    📄 個別ダウンロード<br>
-                    <small>ファイルを順番にDL</small>
+                    📄 個別ダウンロード (推奨)<br>
+                    <small>ファイルを順番にDL・確実に開けます</small>
+                </button>
+                <button class="btn-download btn-download-zip" id="btnDownloadZip">
+                    📦 ZIPファイル<br>
+                    <small>⚠️ Windowsでブロックされる場合あり</small>
                 </button>
             </div>
             <div class="download-note">
-                💡 <strong>Windowsセキュリティでブロックされる場合:</strong> 「個別ダウンロード」を選択してください。<br>
-                ⚠️ <strong>個別ダウンロード時:</strong> ブラウザが「複数ファイルのダウンロードを許可しますか？」と聞く場合があります。「許可」を選択してください。<br>
+                ✅ <strong>個別ダウンロード:</strong> Windowsセキュリティの問題なく開けます。<br>
+                　 ブラウザが「複数ファイルのダウンロードを許可しますか？」と聞く場合は「許可」を選択。<br>
                 📊 <strong>1,000行を超える場合:</strong> 自動的に分割されます（例: _01, _02...）
             </div>
         </div>
@@ -341,7 +341,7 @@
             1. 店舗マスタを設定してください(必須)<br>
             2. 変換前Excelファイル(.xlsx, .xls)をドラッグ&ドロップまたは選択<br>
             　 ※複数ファイル同時アップロード可能<br>
-            3. 自動的にCSVファイルが生成され、ZIPファイルとしてダウンロードされます<br>
+            3. 自動的にCSVファイルが生成されます<br>
             <br>
             <strong>✅ 出力ファイル（1,000行ごとに自動分割）</strong>
             • 【雑貨】店舗DX出荷＆自補設定_日付.csv - ディスプレイ数あり<br>
@@ -668,14 +668,6 @@
                 setTimeout(() => {
                     hideProgress();
                 }, 1000);
-                
-            } catch (error) {
-                console.error('エラー:', error);
-                showStatus('error', `エラーが発生しました: ${error.message}`);
-                hideProgress();
-                hideDownloadOptions();
-            }
-        }
                 
             } catch (error) {
                 console.error('エラー:', error);
