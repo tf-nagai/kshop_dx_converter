@@ -300,8 +300,8 @@
         <div class="drop-zone" id="dropZone">
             <div class="drop-zone-icon">📁</div>
             <div class="drop-zone-text">Excelファイルをドラッグ&ドロップ</div>
-            <div class="drop-zone-hint">または クリックしてファイルを選択</div>
-            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls">
+            <div class="drop-zone-hint">または クリックしてファイルを選択（複数選択可能）</div>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" multiple>
         </div>
 
         <div class="store-master-section">
@@ -322,16 +322,17 @@
             <div class="download-buttons">
                 <button class="btn-download btn-download-zip" id="btnDownloadZip">
                     📦 ZIPファイル (推奨)<br>
-                    <small>3つのCSVをまとめてダウンロード</small>
+                    <small>CSVをまとめてダウンロード</small>
                 </button>
                 <button class="btn-download btn-download-individual" id="btnDownloadIndividual">
                     📄 個別ダウンロード<br>
-                    <small>3つのファイルを順番にDL</small>
+                    <small>ファイルを順番にDL</small>
                 </button>
             </div>
             <div class="download-note">
                 💡 <strong>Windowsセキュリティでブロックされる場合:</strong> 「個別ダウンロード」を選択してください。<br>
-                ⚠️ <strong>個別ダウンロード時:</strong> ブラウザが「複数ファイルのダウンロードを許可しますか？」と聞く場合があります。「許可」を選択してください。
+                ⚠️ <strong>個別ダウンロード時:</strong> ブラウザが「複数ファイルのダウンロードを許可しますか？」と聞く場合があります。「許可」を選択してください。<br>
+                📊 <strong>1,000行を超える場合:</strong> 自動的に分割されます（例: _01, _02...）
             </div>
         </div>
 
@@ -339,12 +340,17 @@
             <strong>📝 使用方法</strong>
             1. 店舗マスタを設定してください(必須)<br>
             2. 変換前Excelファイル(.xlsx, .xls)をドラッグ&ドロップまたは選択<br>
-            3. 自動的に3つのCSVファイルが生成され、ZIPファイルとしてダウンロードされます<br>
+            　 ※複数ファイル同時アップロード可能<br>
+            3. 自動的にCSVファイルが生成され、ZIPファイルとしてダウンロードされます<br>
             <br>
-            <strong>✅ 出力ファイル</strong>
-            • 変換A.csv - ディスプレイ数あり<br>
-            • 変換B-1.csv - ディスプレイ数なし<br>
-            • 変換B-2.csv - ロジザード用(見出しなし)
+            <strong>✅ 出力ファイル（1,000行ごとに自動分割）</strong>
+            • 【雑貨】店舗DX出荷＆自補設定_日付.csv - ディスプレイ数あり<br>
+            • 【アパレル】店舗DX自補設定_日付.csv - ディスプレイ数なし<br>
+            • 【アパレル】ロジザード出荷_日付.csv - ロジザード用(見出しなし)<br>
+            <br>
+            <strong>⚠️ 店舗マスタ未登録の店舗</strong>
+            • 変換A・B-1 → 出力されます<br>
+            • 変換B-2 → 出荷日・納品日が空欄で出力されます
         </div>
     </div>
 
@@ -523,31 +529,49 @@
             return masterMap;
         }
 
+        // ページ全体でのドラッグ&ドロップのデフォルト動作を防止
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+        });
+
         // ドラッグ&ドロップイベント
         dropZone.addEventListener('click', () => fileInput.click());
 
-        dropZone.addEventListener('dragover', (e) => {
+        dropZone.addEventListener('dragenter', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             dropZone.classList.add('dragover');
         });
 
-        dropZone.addEventListener('dragleave', () => {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             dropZone.classList.remove('dragover');
         });
 
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             dropZone.classList.remove('dragover');
             
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                handleFile(files[0]);
+                handleFiles(files);
             }
         });
 
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
+                handleFiles(e.target.files);
             }
         });
 
@@ -570,9 +594,11 @@
             }
         });
 
-        // ファイル処理
-        async function handleFile(file) {
-            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+        // ファイル処理（複数ファイル対応）
+        async function handleFiles(files) {
+            const validFiles = Array.from(files).filter(f => f.name.match(/\.(xlsx|xls)$/i));
+            
+            if (validFiles.length === 0) {
                 showStatus('error', 'Excelファイル(.xlsx, .xls)を選択してください。');
                 return;
             }
@@ -584,35 +610,59 @@
                 return;
             }
 
-            showStatus('processing', '<span class="spinner"></span>Excelファイルを処理中...');
+            const fileCount = validFiles.length;
+            showStatus('processing', `<span class="spinner"></span>${fileCount}個のExcelファイルを処理中...`);
             showProgress(10);
             hideDownloadOptions();
 
             try {
                 const storeMaster = parseStoreMaster(masterText);
                 
-                const data = await file.arrayBuffer();
-                const workbook = XLSX.read(data, { type: 'array' });
+                // 全ファイルの結果を統合
+                const allResultsA = [];
+                const allResultsB1 = [];
+                const allResultsB2 = [];
                 
-                showProgress(30);
+                // ヘッダーを最初に追加
+                const headerA = '店舗コード,店舗名称,型番,品番,商品コード,商品名称,型番,入数,手持ち日数,ディスプレイ数,上限値,売上ランク,センター在庫,店舗在庫,廃盤,大分類,中分類,小分類,細分類,発注締め日,発注バラ数,タグ1,タグ2,タグ3,タグ4,タグ5,タグ6,タグ7,タグ8';
+                allResultsA.push(headerA);
+                allResultsB1.push(headerA);
                 
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+                for (let i = 0; i < validFiles.length; i++) {
+                    const file = validFiles[i];
+                    const progress = 10 + Math.floor((i / validFiles.length) * 60);
+                    showProgress(progress);
+                    showStatus('processing', `<span class="spinner"></span>処理中: ${file.name} (${i + 1}/${fileCount})`);
+                    
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+                    
+                    // データの解析と変換
+                    const results = processData(jsonData, storeMaster);
+                    
+                    // ヘッダーを除いてデータを追加
+                    allResultsA.push(...results.A.slice(1));
+                    allResultsB1.push(...results.B1.slice(1));
+                    allResultsB2.push(...results.B2);
+                }
                 
-                showProgress(50);
-                
-                // データの解析と変換
-                const results = processData(jsonData, storeMaster);
-                
-                showProgress(70);
+                showProgress(80);
                 
                 // 変換完了 - ダウンロードオプションを表示
-                window.convertedResults = results; // グローバルに保存
+                window.convertedResults = {
+                    A: allResultsA,
+                    B1: allResultsB1,
+                    B2: allResultsB2
+                };
                 
                 showProgress(100);
                 
-                showStatus('success', '✓ 変換完了！ダウンロード方法を選択してください。');
+                const totalRows = allResultsA.length - 1; // ヘッダー除く
+                showStatus('success', `✓ 変換完了！${fileCount}ファイル、計${totalRows.toLocaleString()}行を処理しました。ダウンロード方法を選択してください。`);
                 showDownloadOptions();
                 
                 setTimeout(() => {
@@ -681,30 +731,68 @@
                         const lineB1 = `${storeCodeStr},,,${item.code},,,,,7,,,,,,,,,,,,,,,,,,,,`;
                         resultB1.push(lineB1);
                         
-                        // 変換B-2: 出荷情報
+                        // 変換B-2: 出荷情報（マスタ未登録でも出力、日付は空欄）
                         const storeMasterInfo = storeMaster[storeCodeStr];
+                        let shipDateStr = '';
+                        let deliveryDateStr = '';
+                        
                         if (storeMasterInfo) {
                             const shipDate = getNextWeekday(storeMasterInfo.shipDay);
                             const deliveryDate = new Date(shipDate);
                             deliveryDate.setDate(shipDate.getDate() + 1);
-                            
-                            const shipDateStr = formatDate(shipDate);
-                            const deliveryDateStr = formatDate(deliveryDate);
-                            
-                            const lineB2 = `0901,${storeCodeStr},${shipDateStr},${deliveryDateStr},131313,1,${item.code},${qtyNum},1`;
-                            resultB2.push(lineB2);
+                            shipDateStr = formatDate(shipDate);
+                            deliveryDateStr = formatDate(deliveryDate);
                         } else {
-                            console.warn(`店舗コード ${storeCodeStr} がマスタに見つかりません`);
+                            console.warn(`店舗コード ${storeCodeStr} がマスタに見つかりません（出荷日・納品日は空欄）`);
                         }
+                        
+                        const lineB2 = `0901,${storeCodeStr},${shipDateStr},${deliveryDateStr},131313,1,${item.code},${qtyNum},1`;
+                        resultB2.push(lineB2);
                     }
                 }
             }
             
             return {
-                A: resultA.join('\n'),
-                B1: resultB1.join('\n'),
-                B2: resultB2.join('\n')
+                A: resultA,      // 配列のまま返す（分割処理のため）
+                B1: resultB1,    // 配列のまま返す
+                B2: resultB2     // 配列のまま返す
             };
+        }
+
+        // 配列を1000行ごとに分割（ヘッダーは各ファイルに含める）
+        function splitIntoChunks(dataArray, hasHeader = true) {
+            const CHUNK_SIZE = 1000;
+            const chunks = [];
+            const header = hasHeader ? dataArray[0] : null;
+            const data = hasHeader ? dataArray.slice(1) : dataArray;
+            
+            for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+                const chunk = data.slice(i, i + CHUNK_SIZE);
+                if (hasHeader && header) {
+                    chunks.push([header, ...chunk]);
+                } else {
+                    chunks.push(chunk);
+                }
+            }
+            
+            // データがない場合は空の配列を返す
+            if (chunks.length === 0) {
+                if (hasHeader && header) {
+                    chunks.push([header]);
+                } else {
+                    chunks.push([]);
+                }
+            }
+            
+            return chunks;
+        }
+
+        // 日付フォーマット（yyyymmdd形式）
+        function formatDateForFileName(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
         }
 
         // ZIPファイル作成とダウンロード
@@ -714,14 +802,35 @@
             // タイムスタンプでフォルダ名を作成
             const now = new Date();
             const timestamp = formatDateTime(now);
+            const dateStr = formatDateForFileName(now);
             const folderName = timestamp;
             
             // BOM付きUTF-8で保存
             const BOM = '\uFEFF';
             
-            zip.file(`${folderName}/変換A.csv`, BOM + results.A);
-            zip.file(`${folderName}/変換B-1.csv`, BOM + results.B1);
-            zip.file(`${folderName}/変換B-2.csv`, results.B2); // B-2はBOMなし
+            // 変換A（ヘッダーあり）を1000行ごとに分割
+            const chunksA = splitIntoChunks(results.A, true);
+            for (let i = 0; i < chunksA.length; i++) {
+                const partNum = chunksA.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
+                const fileName = `【雑貨】店舗DX出荷＆自補設定_${dateStr}${partNum}.csv`;
+                zip.file(`${folderName}/${fileName}`, BOM + chunksA[i].join('\n'));
+            }
+            
+            // 変換B-1（ヘッダーあり）を1000行ごとに分割
+            const chunksB1 = splitIntoChunks(results.B1, true);
+            for (let i = 0; i < chunksB1.length; i++) {
+                const partNum = chunksB1.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
+                const fileName = `【アパレル】店舗DX自補設定_${dateStr}${partNum}.csv`;
+                zip.file(`${folderName}/${fileName}`, BOM + chunksB1[i].join('\n'));
+            }
+            
+            // 変換B-2（ヘッダーなし）を1000行ごとに分割
+            const chunksB2 = splitIntoChunks(results.B2, false);
+            for (let i = 0; i < chunksB2.length; i++) {
+                const partNum = chunksB2.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
+                const fileName = `【アパレル】ロジザード出荷_${dateStr}${partNum}.csv`;
+                zip.file(`${folderName}/${fileName}`, chunksB2[i].join('\n')); // B-2はBOMなし
+            }
             
             const blob = await zip.generateAsync({ type: 'blob' });
             
@@ -739,23 +848,35 @@
         // 個別ファイルダウンロード（時間差をつけてダウンロード）
         async function downloadIndividualFiles(results) {
             const now = new Date();
-            const timestamp = formatDateTime(now);
+            const dateStr = formatDateForFileName(now);
             const BOM = '\uFEFF';
             
-            // 変換A
-            downloadFile(BOM + results.A, `変換A_${timestamp}.csv`, 'text/csv;charset=utf-8;');
+            // 変換A（ヘッダーあり）を1000行ごとに分割
+            const chunksA = splitIntoChunks(results.A, true);
+            for (let i = 0; i < chunksA.length; i++) {
+                const partNum = chunksA.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
+                const fileName = `【雑貨】店舗DX出荷＆自補設定_${dateStr}${partNum}.csv`;
+                downloadFile(BOM + chunksA[i].join('\n'), fileName, 'text/csv;charset=utf-8;');
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
             
-            // 800ms待機
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // 変換B-1（ヘッダーあり）を1000行ごとに分割
+            const chunksB1 = splitIntoChunks(results.B1, true);
+            for (let i = 0; i < chunksB1.length; i++) {
+                const partNum = chunksB1.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
+                const fileName = `【アパレル】店舗DX自補設定_${dateStr}${partNum}.csv`;
+                downloadFile(BOM + chunksB1[i].join('\n'), fileName, 'text/csv;charset=utf-8;');
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
             
-            // 変換B-1
-            downloadFile(BOM + results.B1, `変換B-1_${timestamp}.csv`, 'text/csv;charset=utf-8;');
-            
-            // 800ms待機
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            // 変換B-2 (BOMなし)
-            downloadFile(results.B2, `変換B-2_${timestamp}.csv`, 'text/csv;charset=utf-8;');
+            // 変換B-2（ヘッダーなし）を1000行ごとに分割
+            const chunksB2 = splitIntoChunks(results.B2, false);
+            for (let i = 0; i < chunksB2.length; i++) {
+                const partNum = chunksB2.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
+                const fileName = `【アパレル】ロジザード出荷_${dateStr}${partNum}.csv`;
+                downloadFile(chunksB2[i].join('\n'), fileName, 'text/csv;charset=utf-8;'); // B-2はBOMなし
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
         }
 
         // ファイルダウンロード共通関数
