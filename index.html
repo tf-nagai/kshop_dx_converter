@@ -676,6 +676,14 @@
                 hideDownloadOptions();
             }
         }
+                
+            } catch (error) {
+                console.error('エラー:', error);
+                showStatus('error', `エラーが発生しました: ${error.message}`);
+                hideProgress();
+                hideDownloadOptions();
+            }
+        }
 
         // データ処理
         function processData(jsonData, storeMaster) {
