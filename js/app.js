@@ -402,15 +402,17 @@ function processData(jsonData, storeMaster) {
     };
 }
 
-// 配列を1000行ごとに分割（ヘッダーは各ファイルに含める）
+// 配列を1ファイル700行以内（ヘッダー込み）に分割
 function splitIntoChunks(dataArray, hasHeader = true) {
-    const CHUNK_SIZE = 1000;
+    const MAX_LINES = 700; // ヘッダー込みの最大行数
     const chunks = [];
     const header = hasHeader ? dataArray[0] : null;
     const data = hasHeader ? dataArray.slice(1) : dataArray;
+    // ヘッダーありはデータ699行+ヘッダー1行=700行
+    const dataRowsPerFile = hasHeader ? MAX_LINES - 1 : MAX_LINES;
     
-    for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-        const chunk = data.slice(i, i + CHUNK_SIZE);
+    for (let i = 0; i < data.length; i += dataRowsPerFile) {
+        const chunk = data.slice(i, i + dataRowsPerFile);
         if (hasHeader && header) {
             chunks.push([header, ...chunk]);
         } else {
@@ -451,7 +453,7 @@ async function createZipAndDownload(results) {
     // BOM付きUTF-8で保存
     const BOM = '\uFEFF';
     
-    // 変換A（ヘッダーあり）を1000行ごとに分割
+    // 変換A（ヘッダーあり）を分割（700行以内/ファイル）
     const chunksA = splitIntoChunks(results.A, true);
     for (let i = 0; i < chunksA.length; i++) {
         const partNum = chunksA.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -459,7 +461,7 @@ async function createZipAndDownload(results) {
         zip.file(`${folderName}/${fileName}`, BOM + chunksA[i].join('\n'));
     }
     
-    // 変換B-1（ヘッダーあり）を1000行ごとに分割
+    // 変換B-1（ヘッダーあり）を分割（700行以内/ファイル）
     const chunksB1 = splitIntoChunks(results.B1, true);
     for (let i = 0; i < chunksB1.length; i++) {
         const partNum = chunksB1.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -467,7 +469,7 @@ async function createZipAndDownload(results) {
         zip.file(`${folderName}/${fileName}`, BOM + chunksB1[i].join('\n'));
     }
     
-    // 変換B-2（ヘッダーなし）を1000行ごとに分割
+    // 変換B-2（ヘッダーなし）を分割（700行以内/ファイル）
     const chunksB2 = splitIntoChunks(results.B2, false);
     for (let i = 0; i < chunksB2.length; i++) {
         const partNum = chunksB2.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -494,7 +496,7 @@ async function downloadIndividualFiles(results) {
     const dateStr = formatDateForFileName(now);
     const BOM = '\uFEFF';
     
-    // 変換A（ヘッダーあり）を1000行ごとに分割
+    // 変換A（ヘッダーあり）を分割（700行以内/ファイル）
     const chunksA = splitIntoChunks(results.A, true);
     for (let i = 0; i < chunksA.length; i++) {
         const partNum = chunksA.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -503,7 +505,7 @@ async function downloadIndividualFiles(results) {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    // 変換B-1（ヘッダーあり）を1000行ごとに分割
+    // 変換B-1（ヘッダーあり）を分割（700行以内/ファイル）
     const chunksB1 = splitIntoChunks(results.B1, true);
     for (let i = 0; i < chunksB1.length; i++) {
         const partNum = chunksB1.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -512,7 +514,7 @@ async function downloadIndividualFiles(results) {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    // 変換B-2（ヘッダーなし）を1000行ごとに分割
+    // 変換B-2（ヘッダーなし）を分割（700行以内/ファイル）
     const chunksB2 = splitIntoChunks(results.B2, false);
     for (let i = 0; i < chunksB2.length; i++) {
         const partNum = chunksB2.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
