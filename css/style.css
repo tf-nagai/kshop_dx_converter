@@ -168,6 +168,30 @@ h1 {
     margin-top: 8px;
 }
 
+.max-lines-section {
+    margin-top: 20px;
+    padding: 20px 30px;
+    background: #FAF8F5;
+    border-radius: 6px;
+    border: 1px solid #E8DDD3;
+}
+
+.max-lines-select {
+    padding: 10px 12px;
+    border: 1px solid #D4C4B0;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #FFFFFF;
+    color: #3E3E3E;
+    min-width: 160px;
+}
+
+.max-lines-select:focus {
+    outline: none;
+    border-color: #8B7355;
+    box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+}
+
 .info-box {
     background: #FAF8F5;
     border: 1px solid #E8DDD3;

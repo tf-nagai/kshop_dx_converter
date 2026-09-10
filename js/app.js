@@ -402,13 +402,59 @@ function processData(jsonData, storeMaster) {
     };
 }
 
-// 配列を1ファイル700行以内（ヘッダー込み）に分割
+// ===== 1ファイルあたりの最大行数（ヘッダー込み）設定 =====
+const MAX_LINES_DEFAULT = 700;
+const MAX_LINES_MIN = 100;
+const MAX_LINES_MAX = 2000;
+const MAX_LINES_STEP = 100;
+const MAX_LINES_STORAGE_KEY = 'kshopDxMaxLines';
+
+// 現在選択されている最大行数を返す（不正値は既定値にフォールバック）
+function getMaxLines() {
+    const el = document.getElementById('maxLines');
+    const v = el ? parseInt(el.value, 10) : NaN;
+    if (Number.isInteger(v) && v >= MAX_LINES_MIN && v <= MAX_LINES_MAX && v % MAX_LINES_STEP === 0) {
+        return v;
+    }
+    return MAX_LINES_DEFAULT;
+}
+
+// 画面上の「○○行」表示を選択値に合わせて更新
+function updateMaxLinesLabels() {
+    const v = getMaxLines();
+    document.querySelectorAll('.max-lines-label').forEach(el => { el.textContent = v; });
+}
+
+// プルダウンを100単位で生成し、前回の選択値を復元
+(function initMaxLinesSelect() {
+    const el = document.getElementById('maxLines');
+    if (!el) return;
+    for (let v = MAX_LINES_MIN; v <= MAX_LINES_MAX; v += MAX_LINES_STEP) {
+        const opt = document.createElement('option');
+        opt.value = String(v);
+        opt.textContent = `${v}行`;
+        el.appendChild(opt);
+    }
+    let saved = MAX_LINES_DEFAULT;
+    try {
+        const s = parseInt(localStorage.getItem(MAX_LINES_STORAGE_KEY), 10);
+        if (Number.isInteger(s) && s >= MAX_LINES_MIN && s <= MAX_LINES_MAX && s % MAX_LINES_STEP === 0) saved = s;
+    } catch (e) { /* localStorage不可の環境では既定値 */ }
+    el.value = String(saved);
+    el.addEventListener('change', () => {
+        try { localStorage.setItem(MAX_LINES_STORAGE_KEY, String(getMaxLines())); } catch (e) { /* noop */ }
+        updateMaxLinesLabels();
+    });
+    updateMaxLinesLabels();
+})();
+
+// 配列を1ファイルあたりの最大行数（ヘッダー込み・画面で選択）以内に分割
 function splitIntoChunks(dataArray, hasHeader = true) {
-    const MAX_LINES = 700; // ヘッダー込みの最大行数
+    const MAX_LINES = getMaxLines(); // ヘッダー込みの最大行数
     const chunks = [];
     const header = hasHeader ? dataArray[0] : null;
     const data = hasHeader ? dataArray.slice(1) : dataArray;
-    // ヘッダーありはデータ699行+ヘッダー1行=700行
+    // ヘッダーありはデータ(MAX_LINES-1)行+ヘッダー1行=MAX_LINES行
     const dataRowsPerFile = hasHeader ? MAX_LINES - 1 : MAX_LINES;
     
     for (let i = 0; i < data.length; i += dataRowsPerFile) {
@@ -453,7 +499,7 @@ async function createZipAndDownload(results) {
     // BOM付きUTF-8で保存
     const BOM = '\uFEFF';
     
-    // 変換A（ヘッダーあり）を分割（700行以内/ファイル）
+    // 変換A（ヘッダーあり）を分割（選択した最大行数以内/ファイル）
     const chunksA = splitIntoChunks(results.A, true);
     for (let i = 0; i < chunksA.length; i++) {
         const partNum = chunksA.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -461,7 +507,7 @@ async function createZipAndDownload(results) {
         zip.file(`${folderName}/${fileName}`, BOM + chunksA[i].join('\n'));
     }
     
-    // 変換B-1（ヘッダーあり）を分割（700行以内/ファイル）
+    // 変換B-1（ヘッダーあり）を分割（選択した最大行数以内/ファイル）
     const chunksB1 = splitIntoChunks(results.B1, true);
     for (let i = 0; i < chunksB1.length; i++) {
         const partNum = chunksB1.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -469,7 +515,7 @@ async function createZipAndDownload(results) {
         zip.file(`${folderName}/${fileName}`, BOM + chunksB1[i].join('\n'));
     }
     
-    // 変換B-2（ヘッダーなし）を分割（700行以内/ファイル）
+    // 変換B-2（ヘッダーなし）を分割（選択した最大行数以内/ファイル）
     const chunksB2 = splitIntoChunks(results.B2, false);
     for (let i = 0; i < chunksB2.length; i++) {
         const partNum = chunksB2.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -496,7 +542,7 @@ async function downloadIndividualFiles(results) {
     const dateStr = formatDateForFileName(now);
     const BOM = '\uFEFF';
     
-    // 変換A（ヘッダーあり）を分割（700行以内/ファイル）
+    // 変換A（ヘッダーあり）を分割（選択した最大行数以内/ファイル）
     const chunksA = splitIntoChunks(results.A, true);
     for (let i = 0; i < chunksA.length; i++) {
         const partNum = chunksA.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -505,7 +551,7 @@ async function downloadIndividualFiles(results) {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    // 変換B-1（ヘッダーあり）を分割（700行以内/ファイル）
+    // 変換B-1（ヘッダーあり）を分割（選択した最大行数以内/ファイル）
     const chunksB1 = splitIntoChunks(results.B1, true);
     for (let i = 0; i < chunksB1.length; i++) {
         const partNum = chunksB1.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
@@ -514,7 +560,7 @@ async function downloadIndividualFiles(results) {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    // 変換B-2（ヘッダーなし）を分割（700行以内/ファイル）
+    // 変換B-2（ヘッダーなし）を分割（選択した最大行数以内/ファイル）
     const chunksB2 = splitIntoChunks(results.B2, false);
     for (let i = 0; i < chunksB2.length; i++) {
         const partNum = chunksB2.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';

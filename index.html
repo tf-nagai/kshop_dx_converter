@@ -28,6 +28,14 @@
             </div>
         </div>
 
+        <div class="max-lines-section">
+            <div class="store-master-title">📊 1ファイルあたりの最大行数（ヘッダー込み）</div>
+            <select id="maxLines" class="max-lines-select"></select>
+            <div class="store-master-hint">
+                ※ この行数を超える場合は自動的に分割されます（例: _01, _02...）。100行単位で変更できます。
+            </div>
+        </div>
+
         <div class="status" id="status"></div>
         <div class="progress-bar" id="progressBar">
             <div class="progress-fill" id="progressFill"></div>
@@ -48,7 +56,7 @@
             <div class="download-note">
                 ✅ <strong>個別ダウンロード:</strong> Windowsセキュリティの問題なく開けます。<br>
                 　 ブラウザが「複数ファイルのダウンロードを許可しますか？」と聞く場合は「許可」を選択。<br>
-                📊 <strong>1ファイル700行（ヘッダー込み）を超える場合:</strong> 自動的に分割されます（例: _01, _02...）
+                📊 <strong>1ファイル<span class="max-lines-label">700</span>行（ヘッダー込み）を超える場合:</strong> 自動的に分割されます（例: _01, _02...）
             </div>
         </div>
 
@@ -59,7 +67,7 @@
             　 ※複数ファイル同時アップロード可能<br>
             3. 自動的にCSVファイルが生成されます<br>
             <br>
-            <strong>✅ 出力ファイル（ヘッダー込み700行以内で自動分割）</strong>
+            <strong>✅ 出力ファイル（ヘッダー込み<span class="max-lines-label">700</span>行以内で自動分割）</strong>
             • 【雑貨】店舗DX出荷＆自補設定_日付.csv - ディスプレイ数あり<br>
             • 【アパレル】店舗DX自補設定_日付.csv - ディスプレイ数なし<br>
             • 【アパレル】ロジザード出荷_日付.csv - ロジザード用(見出しなし)<br>
