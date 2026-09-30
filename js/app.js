@@ -370,8 +370,8 @@ function processData(jsonData, storeMaster) {
                 const lineA = `${storeCodeStr},,,${item.code},,,,,7,${displayQty},${qtyNum},,,,,,,,,,${qtyNum},,,,,,,,`;
                 resultA.push(lineA);
                 
-                // 変換B-1: ディスプレイ数と上限値は空欄
-                const lineB1 = `${storeCodeStr},,,${item.code},,,,,7,,,,,,,,,,,,,,,,,,,,`;
+                // 変換B-1: ディスプレイ数・上限値は配布数（発注バラ数は空欄）
+                const lineB1 = `${storeCodeStr},,,${item.code},,,,,7,${qtyNum},${qtyNum},,,,,,,,,,,,,,,,,,`;
                 resultB1.push(lineB1);
                 
                 // 変換B-2: 出荷情報（マスタ未登録でも出力、日付は空欄）
