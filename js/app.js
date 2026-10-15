@@ -260,6 +260,9 @@ async function handleFiles(files) {
 
     try {
         const storeMaster = parseStoreMaster(masterText);
+        // 変換時刻（ロジザード出荷のE列とファイル名に同じ値を使う）
+        const convertedAt = new Date();
+        const shipTimeStr = formatTime(convertedAt);
         
         // 全ファイルの結果を統合
         const allResultsA = [];
@@ -285,7 +288,7 @@ async function handleFiles(files) {
             const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
             
             // データの解析と変換
-            const results = processData(jsonData, storeMaster);
+            const results = processData(jsonData, storeMaster, shipTimeStr);
             
             // ヘッダーを除いてデータを追加
             allResultsA.push(...results.A.slice(1));
@@ -299,7 +302,8 @@ async function handleFiles(files) {
         window.convertedResults = {
             A: allResultsA,
             B1: allResultsB1,
-            B2: allResultsB2
+            B2: allResultsB2,
+            convertedAt: convertedAt
         };
         
         showProgress(100);
@@ -321,7 +325,7 @@ async function handleFiles(files) {
 }
 
 // データ処理
-function processData(jsonData, storeMaster) {
+function processData(jsonData, storeMaster, shipTimeStr) {
     // 品番の行を探す(行5)
     const headerRow = 5;
     const itemCodes = [];
@@ -375,6 +379,7 @@ function processData(jsonData, storeMaster) {
                 resultB1.push(lineB1);
                 
                 // 変換B-2: 出荷情報（マスタ未登録でも出力、日付は空欄）
+                // 出荷時刻は変換時刻（荷主出荷№=1+店番+出荷日+出荷時刻のため、変換ごとに変えて上書きを防ぐ）
                 const storeMasterInfo = storeMaster[storeCodeStr];
                 let shipDateStr = '';
                 let deliveryDateStr = '';
@@ -389,7 +394,7 @@ function processData(jsonData, storeMaster) {
                     console.warn(`店舗コード ${storeCodeStr} がマスタに見つかりません（出荷日・納品日は空欄）`);
                 }
                 
-                const lineB2 = `0901,${storeCodeStr},${shipDateStr},${deliveryDateStr},131313,1,${item.code},${qtyNum},1`;
+                const lineB2 = `0901,${storeCodeStr},${shipDateStr},${deliveryDateStr},${shipTimeStr},1,${item.code},${qtyNum},1`;
                 resultB2.push(lineB2);
             }
         }
@@ -486,6 +491,19 @@ function formatDateForFileName(date) {
     return `${year}${month}${day}`;
 }
 
+// 時刻フォーマット（HHmmss形式）
+function formatTime(date) {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${hours}${minutes}${seconds}`;
+}
+
+// ロジザード出荷のファイル名（ロジザード出荷_yyyyMMddHHmmss.csv、分割しないので連番なし）
+function logizardFileName(convertedAt) {
+    return `ロジザード出荷_${formatDateForFileName(convertedAt)}${formatTime(convertedAt)}.csv`;
+}
+
 // ZIPファイル作成とダウンロード
 async function createZipAndDownload(results) {
     const zip = new JSZip();
@@ -515,13 +533,8 @@ async function createZipAndDownload(results) {
         zip.file(`${folderName}/${fileName}`, BOM + chunksB1[i].join('\n'));
     }
     
-    // 変換B-2（ヘッダーなし）を分割（選択した最大行数以内/ファイル）
-    const chunksB2 = splitIntoChunks(results.B2, false);
-    for (let i = 0; i < chunksB2.length; i++) {
-        const partNum = chunksB2.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
-        const fileName = `【アパレル】ロジザード出荷_${dateStr}${partNum}.csv`;
-        zip.file(`${folderName}/${fileName}`, chunksB2[i].join('\n')); // B-2はBOMなし
-    }
+    // 変換B-2（ヘッダーなし）は分割せず必ず1ファイル（分割すると同じ荷主出荷№が別取込になり上書きされるため）
+    zip.file(`${folderName}/${logizardFileName(results.convertedAt)}`, results.B2.join('\n')); // B-2はBOMなし
     
     const blob = await zip.generateAsync({ type: 'blob' });
     
@@ -560,14 +573,8 @@ async function downloadIndividualFiles(results) {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    // 変換B-2（ヘッダーなし）を分割（選択した最大行数以内/ファイル）
-    const chunksB2 = splitIntoChunks(results.B2, false);
-    for (let i = 0; i < chunksB2.length; i++) {
-        const partNum = chunksB2.length > 1 ? `_${String(i + 1).padStart(2, '0')}` : '';
-        const fileName = `【アパレル】ロジザード出荷_${dateStr}${partNum}.csv`;
-        downloadFile(chunksB2[i].join('\n'), fileName, 'text/csv;charset=utf-8;'); // B-2はBOMなし
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
+    // 変換B-2（ヘッダーなし）は分割せず必ず1ファイル（分割すると同じ荷主出荷№が別取込になり上書きされるため）
+    downloadFile(results.B2.join('\n'), logizardFileName(results.convertedAt), 'text/csv;charset=utf-8;'); // B-2はBOMなし
 }
 
 // ファイルダウンロード共通関数
