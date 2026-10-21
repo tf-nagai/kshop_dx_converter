@@ -413,11 +413,13 @@ const MAX_LINES_MIN = 100;
 const MAX_LINES_MAX = 2000;
 const MAX_LINES_STEP = 100;
 const MAX_LINES_STORAGE_KEY = 'kshopDxMaxLines';
+const MAX_LINES_UNLIMITED = 0; // select の value "0" を「分割なし」の番兵として使う
 
 // 現在選択されている最大行数を返す（不正値は既定値にフォールバック）
 function getMaxLines() {
     const el = document.getElementById('maxLines');
     const v = el ? parseInt(el.value, 10) : NaN;
+    if (v === MAX_LINES_UNLIMITED) return MAX_LINES_UNLIMITED;
     if (Number.isInteger(v) && v >= MAX_LINES_MIN && v <= MAX_LINES_MAX && v % MAX_LINES_STEP === 0) {
         return v;
     }
@@ -427,7 +429,10 @@ function getMaxLines() {
 // 画面上の「○○行」表示を選択値に合わせて更新
 function updateMaxLinesLabels() {
     const v = getMaxLines();
-    document.querySelectorAll('.max-lines-label').forEach(el => { el.textContent = v; });
+    const unlimited = v === MAX_LINES_UNLIMITED;
+    document.querySelectorAll('.max-lines-label').forEach(el => { el.textContent = unlimited ? '分割なし' : v; });
+    document.querySelectorAll('.when-split').forEach(el => { el.style.display = unlimited ? 'none' : ''; });
+    document.querySelectorAll('.when-nosplit').forEach(el => { el.style.display = unlimited ? '' : 'none'; });
 }
 
 // プルダウンを100単位で生成し、前回の選択値を復元
@@ -440,10 +445,14 @@ function updateMaxLinesLabels() {
         opt.textContent = `${v}行`;
         el.appendChild(opt);
     }
+    const optUnlimited = document.createElement('option');
+    optUnlimited.value = String(MAX_LINES_UNLIMITED);
+    optUnlimited.textContent = '分割なし（1ファイルにまとめる）';
+    el.appendChild(optUnlimited);
     let saved = MAX_LINES_DEFAULT;
     try {
         const s = parseInt(localStorage.getItem(MAX_LINES_STORAGE_KEY), 10);
-        if (Number.isInteger(s) && s >= MAX_LINES_MIN && s <= MAX_LINES_MAX && s % MAX_LINES_STEP === 0) saved = s;
+        if (s === MAX_LINES_UNLIMITED || (Number.isInteger(s) && s >= MAX_LINES_MIN && s <= MAX_LINES_MAX && s % MAX_LINES_STEP === 0)) saved = s;
     } catch (e) { /* localStorage不可の環境では既定値 */ }
     el.value = String(saved);
     el.addEventListener('change', () => {
@@ -460,7 +469,8 @@ function splitIntoChunks(dataArray, hasHeader = true) {
     const header = hasHeader ? dataArray[0] : null;
     const data = hasHeader ? dataArray.slice(1) : dataArray;
     // ヘッダーありはデータ(MAX_LINES-1)行+ヘッダー1行=MAX_LINES行
-    const dataRowsPerFile = hasHeader ? MAX_LINES - 1 : MAX_LINES;
+    // 分割なし（0）のときは無制限（常にチャンク1つ）
+    const dataRowsPerFile = MAX_LINES === MAX_LINES_UNLIMITED ? Infinity : (hasHeader ? MAX_LINES - 1 : MAX_LINES);
     
     for (let i = 0; i < data.length; i += dataRowsPerFile) {
         const chunk = data.slice(i, i + dataRowsPerFile);

@@ -27,3 +27,6 @@ __pycache__/
 *.py[cod]
 venv/
 .env
+
+# Claude Code ローカル設定
+.claude/
