@@ -324,6 +324,12 @@ async function handleFiles(files) {
     }
 }
 
+// 【雑貨】変換A のディスプレイ数: 配布数1→1、2→2、それ以外は配布数の半数（端数切り上げ）
+function calcDisplayQty(qtyNum) {
+    if (qtyNum <= 2) return qtyNum;
+    return Math.ceil(qtyNum / 2);
+}
+
 // データ処理
 function processData(jsonData, storeMaster, shipTimeStr) {
     // 品番の行を探す(行5)
@@ -369,8 +375,8 @@ function processData(jsonData, storeMaster, shipTimeStr) {
             if (qty !== null && qty !== undefined && qty !== '' && !isNaN(qty) && Number(qty) > 0) {
                 const qtyNum = Number(qty);
                 
-                // 変換A: ディスプレイ数は配布数の半数(切り上げ)
-                const displayQty = Math.ceil(qtyNum / 2);
+                // 変換A: ディスプレイ数は calcDisplayQty のルールで算出
+                const displayQty = calcDisplayQty(qtyNum);
                 const lineA = `${storeCodeStr},,,${item.code},,,,,7,${displayQty},${qtyNum},,,,,,,,,,${qtyNum},,,,,,,,`;
                 resultA.push(lineA);
                 
